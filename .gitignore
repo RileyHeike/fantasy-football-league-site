@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+apps/web/.next/
+apps/web/out/
+*.tsbuildinfo
+
+# Sync output (local CLI runs; raw seasons + snapshot live in S3 on AWS)
+data/raw/
+data/snapshot.json
+
+# CDK
+infra/cdk.out/
+infra/.cdk.staging/
+
+# Env / secrets
+.env
+.env.*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*

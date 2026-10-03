@@ -1,7 +1,7 @@
 {
-  "leagueId": "YOUR_SLEEPER_LEAGUE_ID",
-  "name": "Your League Name",
+  "leagueId": "1389722682865483776",
+  "name": "Sped Seattleites",
   "managers": [],
   "trophies": { "champion": "The Cup", "last": "The Wooden Spoon" },
-  "lastPlaceRule": "regularSeason"
+  "lastPlaceRule": "consolationFinalLoser"
 }

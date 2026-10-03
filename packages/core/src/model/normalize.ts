@@ -223,10 +223,12 @@ function computePlacements(
   const consolationFinal = rs.losersBracket.find((b) => b.p === 1);
   const rule = config?.lastPlaceRule ?? "regularSeason";
 
-  let last: string | undefined;
-  if (rule === "consolationFinalLoser") last = m(consolationFinal?.l);
-  else if (rule === "consolationFinalWinner") last = m(consolationFinal?.w);
-  else {
+  // Worst regular-season record (fewest wins, then fewest points). Used directly
+  // for the "regularSeason" rule and as a fallback when a bracket-based rule can't
+  // resolve — e.g. 2020's toilet-bowl final was never scored, so the bracket has
+  // no loser/winner. Falling back keeps every completed season from showing a
+  // blank last place.
+  const regularSeasonWorst = () => {
     const rec = new Map<string, { w: number; pf: number }>();
     for (const g of seasonGames) {
       if (g.kind !== "regular" || !g.final) continue;
@@ -238,8 +240,13 @@ function computePlacements(
         rec.set(s.managerId, r);
       }
     }
-    last = [...rec.entries()].sort((a, b) => a[1].w - b[1].w || a[1].pf - b[1].pf)[0]?.[0];
-  }
+    return [...rec.entries()].sort((a, b) => a[1].w - b[1].w || a[1].pf - b[1].pf)[0]?.[0];
+  };
+
+  let last: string | undefined;
+  if (rule === "consolationFinalLoser") last = m(consolationFinal?.l);
+  else if (rule === "consolationFinalWinner") last = m(consolationFinal?.w);
+  if (last === undefined) last = regularSeasonWorst();
 
   return { champion: m(final?.w), runnerUp: m(final?.l), third: m(third?.w), last };
 }
