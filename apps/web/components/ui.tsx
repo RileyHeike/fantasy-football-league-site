@@ -60,3 +60,16 @@ export function ResultPill({ r }: { r: "W" | "L" | "T" }) {
   const cls = r === "W" ? "text-win" : r === "L" ? "text-loss" : "text-chalk-dim";
   return <span className={`num font-semibold ${cls}`}>{r}</span>;
 }
+
+/** Shell for a nav entry that's wired in but not built yet. */
+export function ComingSoonPage({ title, blurb, note }: { title: string; blurb: string; note?: string }) {
+  return (
+    <>
+      <PageTitle sub={blurb}>{title}</PageTitle>
+      <div className="inline-flex items-center gap-2 rounded-lg border border-yardline px-4 py-2.5 text-sm text-chalk-dim">
+        <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-chalk-dim" />
+        {note ?? "Not built yet. It'll show up here once it's ready."}
+      </div>
+    </>
+  );
+}
