@@ -1,7 +1,7 @@
 {
   "app": "npx tsx bin/app.ts",
   "context": {
-    "budgetEmail": "you@example.com",
+    "budgetEmail": "rileyheike@gmail.com",
     "monthlyBudgetUsd": 5,
     "syncHourUtc": 9
   }
