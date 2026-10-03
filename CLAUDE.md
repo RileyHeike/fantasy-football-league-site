@@ -47,15 +47,24 @@ cd infra && npm install && npx cdk synth
 
 - Pages and stats read the normalized `LeagueHistory`, never raw Sleeper shapes. Raw responses are stored untouched.
 - New stat = a `defineStat()` module registered in `packages/core/src/stats/index.ts`, plus a test. Bump `SCHEMA_VERSION` in `snapshot.ts` on breaking snapshot changes.
-- Design system "Night game": colors only through tokens in `apps/web/app/globals.css`. **Gold is reserved for champions and records**; win/loss green/red only for results; each manager keeps a jersey color (`lib/palette.ts`, never gold-like). Type: Big Shoulders Display + Barlow. Avoid all-caps eyebrow labels and decorative motion; one load animation (the ring of honor) only.
+- Design system "Night game": colors only through tokens in `apps/web/app/globals.css`. **Gold is reserved for champions and records**; win/loss green/red only for results; each manager keeps a jersey color (`lib/palette.ts`, never gold-like); player positions get their own small muted palette (`lib/positions.ts`). Type: Big Shoulders Display + Barlow. Avoid all-caps eyebrow labels and decorative motion; one load animation (the ring of honor) only.
 - `players_points` in Sleeper matchups is unofficial; treat as optional.
+- New clickable box score / drill-down UI → reuse the modal system (`components/modal/ModalProvider.tsx`, `useModal()`'s `open`/`push`/`back`/`close`), not a one-off dialog. Client components that need manager/player display data take plain pre-resolved props (see `lib/matchup.ts`, `lib/recordView.ts`) built by a server component — never import `lib/data.ts` (marked `server-only`) from a client component.
+- New feature needing a player's fantasy performance → read `LeagueHistory.playerSeasonFinishes` / `playerWeeklyPoints`, and if raw Sleeper stats are ever touched directly, always run them through `scorePoints()` (`packages/core/src/scoring.ts`). Never use the stats API's own `pts_std`/`pts_half_ppr`/`pts_ppr` fields — verified wrong for this league's actual (distance-based) kicker scoring.
+- Not-yet-built pages still get a real nav entry with a "coming soon" tag and a placeholder page (`ComingSoonPage` in `components/ui.tsx`) explaining what's coming, rather than a dead link or no entry at all.
 
 ## Status
 
-Done: core pipeline, stats (standings, head-to-head, records, all-play/luck, trophies), 18 passing tests, local sync, home / standings / history / season / managers / profile / records / rivalries pages, light theme, CDK stack that synthesizes.
+**Live** at `https://master.d3tmi0z43d0yoo.amplifyapp.com`, deployed to AWS, syncing nightly.
+Full architecture, AWS resource IDs, and the deploy workflow are in `.claude/architecture.md` — read that before touching infra or the sync pipeline.
+
+Done: core pipeline, stats (standings, head-to-head, records, all-play/luck, trophies, bracket trees), the player-finish data pipeline (season positional finish + transaction-scoped weekly points, see architecture.md §5), 26 passing tests, local sync.
+Pages: home, standings, history/season, managers/profile, records (interactive — click a card for the top 10, click a row for the box score), rivalries, transactions, draft boards, and six "coming soon" placeholders.
+Reusable click-through matchup/box-score modal used on the homepage and the records page.
+Nav reorganized into dropdown groups (This season / League / Moves) plus pinned Home and Records, with a mobile "More" sheet.
 
 Next, in order:
-1. **Owner provides the current Sleeper league ID.** Run `npm run sync`, then do the launch-gate check: each season's champion, standings and a few records must match the Sleeper app. Fill in `content/league.config.json` (extra accounts per manager, trophy names, `lastPlaceRule`).
-2. Phase 2 pages: transactions (trades and waivers), draft boards, playoff bracket view, lore content.
-3. AWS: `cdk bootstrap` + `cdk deploy` by the owner; confirm SNS/budget emails; Amplify app from GitHub with `DATA_BUCKET` env var and the `AmplifyBuildRoleArn` service role; store the Amplify webhook URL in `/league-site/amplify-build-hook`; invoke the sync Lambda once; then Route 53 domain.
-4. Phase 4: lineup efficiency, power rankings, trade and draft grades, more charts.
+1. **Draft grades, trade grades, waiver wire value** — the data pipeline is built and verified (see architecture.md §5); write the three `defineStat()` modules and replace their "coming soon" placeholders.
+2. **Power rankings, lineup efficiency, manager tendencies** — no new data needed, just the stat modules and pages.
+3. Real trophy names and lore content (bios, rules, punishments) from the owner.
+4. Custom domain via Route 53.
