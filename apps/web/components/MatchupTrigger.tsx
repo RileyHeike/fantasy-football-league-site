@@ -23,7 +23,8 @@ export function MatchupTrigger({
   stack?: boolean;
 }) {
   const modal = useModal();
-  const view = { title: matchup.label, content: <MatchupView matchup={matchup} /> };
+  const title = matchup.final ? matchup.label : `${matchup.label} · In progress`;
+  const view = { title, content: <MatchupView matchup={matchup} />, wide: true };
   return (
     <button type="button" className={className} onClick={() => (stack ? modal.push(view) : modal.open(view))}>
       {children}

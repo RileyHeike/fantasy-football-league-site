@@ -5,6 +5,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 interface ModalView {
   title: string;
   content: ReactNode;
+  /** Grows the modal on larger viewports — use for content that benefits from more room, like a box score. */
+  wide?: boolean;
 }
 
 interface ModalApi {
@@ -63,7 +65,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
           aria-modal="true"
         >
           <div
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg border border-yardline bg-field-raised p-5 shadow-xl"
+            className={`max-h-[85vh] w-full overflow-y-auto rounded-lg border border-yardline bg-field-raised p-5 shadow-xl ${current.wide ? "max-w-4xl" : "max-w-lg"}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between gap-3">

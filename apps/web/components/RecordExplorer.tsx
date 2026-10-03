@@ -55,7 +55,10 @@ function RecordRow({ row }: { row: RecordRowView }) {
     <li>
       <button
         type="button"
-        onClick={() => modal.push({ title: row.matchup!.label, content: <MatchupView matchup={row.matchup!} /> })}
+        onClick={() => {
+          const m = row.matchup!;
+          modal.push({ title: m.final ? m.label : `${m.label} · In progress`, content: <MatchupView matchup={m} />, wide: true });
+        }}
         className="flex w-full items-center justify-between gap-3 rounded px-2 py-1.5 text-left hover:bg-field-sunk"
       >
         {body}
