@@ -6,8 +6,8 @@
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { FIXTURE_CONFIG, FixtureTransport, HttpTransport, SleeperClient, type LeagueConfig } from "@league/core";
-import { FileRawStore, FileSnapshotStore } from "./fileStore";
+import { FIXTURE_CONFIG, FixtureTransport, HttpTransport, SleeperClient, SleeperStatsClient, type LeagueConfig } from "@league/core";
+import { FilePlayerStatsStore, FilePlayerWeeklyStore, FileRawStore, FileSnapshotStore } from "./fileStore";
 import { runSync } from "./sync";
 
 const root = resolve(import.meta.dirname, "../../..");
@@ -44,4 +44,8 @@ await runSync({
   config,
   leagueId,
   players,
+  // Draft/trade/waiver grades. Skipped for the fixture demo — no real transactions to grade.
+  statsClient: fixture ? undefined : new SleeperStatsClient(),
+  playerStats: fixture ? undefined : new FilePlayerStatsStore(join(out, "playerStats")),
+  playerWeekly: fixture ? undefined : new FilePlayerWeeklyStore(join(out, "playerWeekly")),
 });

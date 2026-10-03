@@ -117,6 +117,34 @@ export interface PlayerInfo {
   team?: string | null;
 }
 
+/**
+ * How a player finished a completed season at their position, league-wide
+ * (not just among this league's rostered players) — e.g. "RB14". Powers
+ * draft grades: a pick judged against where the player actually finished.
+ */
+export interface PlayerSeasonFinish {
+  playerId: string;
+  season: number;
+  position: string;
+  points: number;
+  /** 1 = the best fantasy season at that position that year. */
+  positionRank: number;
+}
+
+/**
+ * One player's fantasy points in one week of one season, scored under this
+ * league's own settings. Only computed for players who were ever part of a
+ * trade or waiver/free-agent move — not the full player universe — so trade
+ * and waiver grades can sum "points produced after the move" without
+ * crediting a manager for production before they owned the player.
+ */
+export interface PlayerWeeklyPoints {
+  playerId: string;
+  season: number;
+  week: number;
+  points: number;
+}
+
 export interface LeagueHistory {
   leagueName: string;
   managers: Manager[];
@@ -125,6 +153,8 @@ export interface LeagueHistory {
   transactions: Transaction[];
   draftPicks: DraftPick[];
   players: Record<string, PlayerInfo>;
+  playerSeasonFinishes: PlayerSeasonFinish[];
+  playerWeeklyPoints: PlayerWeeklyPoints[];
 }
 
 /**

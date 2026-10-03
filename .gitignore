@@ -10,6 +10,8 @@ apps/web/out/
 data/raw/
 data/snapshot.json
 data/fixture/
+data/playerStats/
+data/playerWeekly/
 
 # CDK
 infra/cdk.out/

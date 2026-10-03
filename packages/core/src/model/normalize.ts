@@ -1,6 +1,8 @@
+import { scorePoints } from "../scoring";
+import { FANTASY_POSITIONS } from "../sleeper/statsClient";
 import type { RawSeason } from "../sleeper/history";
 import { lastWeekOf } from "../sleeper/history";
-import type { SleeperBracketMatch, SleeperMatchup, SleeperPlayer, SleeperUser } from "../sleeper/types";
+import type { SleeperBracketMatch, SleeperMatchup, SleeperPlayer, SleeperPlayerStatLine, SleeperUser } from "../sleeper/types";
 import type {
   BracketMatch,
   DraftPick,
@@ -11,6 +13,8 @@ import type {
   LeagueHistory,
   Manager,
   PlayerInfo,
+  PlayerSeasonFinish,
+  PlayerWeeklyPoints,
   Season,
   SeasonPlacements,
   SeasonTeam,
@@ -21,6 +25,10 @@ export interface NormalizeOptions {
   config?: LeagueConfig;
   /** Optional Sleeper players map (from /players/nfl) to name every player. */
   players?: Record<string, SleeperPlayer>;
+  /** Raw season-total stat lines per position, keyed by season year. */
+  playerSeasonStats?: Record<number, SleeperPlayerStatLine[]>;
+  /** Raw weekly stat lines, keyed by "<playerId>-<season>". */
+  playerWeeklyStats?: Record<string, Record<string, SleeperPlayerStatLine>>;
 }
 
 export function slugify(s: string): string {
@@ -164,8 +172,70 @@ export function normalize(raw: RawSeason[], opts: NormalizeOptions = {}): League
     if (name) players[id] = { name, position: pl.position, team: pl.team ?? null };
   }
 
+  const scoringBySeason = new Map(seasonsRaw.map((rs) => [Number(rs.league.season), rs.league.scoring_settings]));
+  const playerSeasonFinishes = computeSeasonFinishes(opts.playerSeasonStats, scoringBySeason);
+  const playerWeeklyPoints = computeWeeklyPoints(opts.playerWeeklyStats, scoringBySeason);
+
   const leagueName = config?.name ?? seasonsRaw.at(-1)?.league.name ?? "League";
-  return { leagueName, managers: managers.list(), seasons, games, transactions, draftPicks, players };
+  return {
+    leagueName,
+    managers: managers.list(),
+    seasons,
+    games,
+    transactions,
+    draftPicks,
+    players,
+    playerSeasonFinishes,
+    playerWeeklyPoints,
+  };
+}
+
+/** Scores every fetched player-season under that season's own scoring settings, then ranks within position. */
+function computeSeasonFinishes(
+  bySeason: Record<number, SleeperPlayerStatLine[]> | undefined,
+  scoringBySeason: Map<number, Record<string, number>>,
+): PlayerSeasonFinish[] {
+  const out: PlayerSeasonFinish[] = [];
+  for (const [seasonStr, lines] of Object.entries(bySeason ?? {})) {
+    const season = Number(seasonStr);
+    const scoring = scoringBySeason.get(season);
+    if (!scoring) continue;
+    const byPosition = new Map<string, { playerId: string; points: number }[]>();
+    for (const line of lines) {
+      const position = line.player?.position;
+      // Sleeper's position filter isn't exclusive (a player with multiple fantasy_positions can come
+      // back from more than one query), so filter to the positions this league actually rosters.
+      if (!position || !line.stats || !(FANTASY_POSITIONS as readonly string[]).includes(position)) continue;
+      const list = byPosition.get(position) ?? [];
+      list.push({ playerId: line.player_id, points: scorePoints(line.stats, scoring) });
+      byPosition.set(position, list);
+    }
+    for (const [position, entries] of byPosition) {
+      entries.sort((a, b) => b.points - a.points);
+      entries.forEach((e, i) => out.push({ playerId: e.playerId, season, position, points: e.points, positionRank: i + 1 }));
+    }
+  }
+  return out;
+}
+
+function computeWeeklyPoints(
+  byPlayerSeason: Record<string, Record<string, SleeperPlayerStatLine>> | undefined,
+  scoringBySeason: Map<number, Record<string, number>>,
+): PlayerWeeklyPoints[] {
+  const out: PlayerWeeklyPoints[] = [];
+  for (const [key, weeks] of Object.entries(byPlayerSeason ?? {})) {
+    const sep = key.lastIndexOf("-");
+    const playerId = key.slice(0, sep);
+    const season = Number(key.slice(sep + 1));
+    const scoring = scoringBySeason.get(season);
+    if (!playerId || !scoring) continue;
+    for (const [weekStr, line] of Object.entries(weeks)) {
+      // null means the player had no stats that week (bye, didn't play, wasn't active yet) — not an error.
+      if (!line) continue;
+      out.push({ playerId, season, week: Number(weekStr), points: scorePoints(line.stats, scoring) });
+    }
+  }
+  return out;
 }
 
 function side(managerId: string, mu: SleeperMatchup): GameSide {

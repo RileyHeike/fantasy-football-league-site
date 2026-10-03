@@ -1,7 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { GetParameterCommand, SSMClient } from "@aws-sdk/client-ssm";
-import { HttpTransport, SleeperClient, type LeagueConfig } from "@league/core";
-import { S3RawStore, S3SnapshotStore } from "./s3Store";
+import { HttpTransport, SleeperClient, SleeperStatsClient, type LeagueConfig } from "@league/core";
+import { S3PlayerStatsStore, S3PlayerWeeklyStore, S3RawStore, S3SnapshotStore } from "./s3Store";
 import { runSync } from "./sync";
 import config from "../../../content/league.config.json";
 
@@ -31,6 +31,10 @@ export async function handler() {
     snapshots: new S3SnapshotStore(s3, bucket),
     config: config as LeagueConfig,
     players,
+    // Draft/trade/waiver grades.
+    statsClient: new SleeperStatsClient(),
+    playerStats: new S3PlayerStatsStore(s3, bucket),
+    playerWeekly: new S3PlayerWeeklyStore(s3, bucket),
   });
 
   const param = process.env.BUILD_HOOK_PARAM;

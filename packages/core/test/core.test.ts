@@ -7,12 +7,15 @@ import {
   generateFixtureLeague,
   HttpTransport,
   importHistory,
+  normalize,
   ordinal,
   pairMatchups,
+  scorePoints,
   SleeperClient,
   type LeagueSnapshot,
   type RawSeason,
   type SleeperMatchup,
+  type SleeperPlayerStatLine,
 } from "../src";
 
 let raw: RawSeason[];
@@ -111,6 +114,60 @@ describe("normalize", () => {
     const current = snap.league.seasons.at(-1)!;
     expect(current.winnersBracket).toEqual([]);
     expect(current.losersBracket).toEqual([]);
+  });
+});
+
+describe("scorePoints", () => {
+  it("dot-products raw stat categories against a league's own scoring settings", () => {
+    const stats = { rec: 5, rec_yd: 60, rec_td: 1, fgm_yds: 45 };
+    const settings = { rec: 1, rec_yd: 0.1, rec_td: 6 };
+    // fgm_yds has no weight in these settings and must not contribute.
+    expect(scorePoints(stats, settings)).toBe(5 * 1 + 60 * 0.1 + 1 * 6);
+  });
+
+  it("ignores categories the stat line doesn't have", () => {
+    expect(scorePoints({ rec: 3 }, { rec: 1, rec_td: 6 })).toBe(3);
+  });
+});
+
+describe("player-finish pipeline", () => {
+  // Fixture league scoring: { rec: 0.5, pass_td: 4, rush_td: 6, rec_td: 6 }.
+  it("ranks players within position by points scored under that season's own settings", () => {
+    const playerSeasonStats: Record<number, SleeperPlayerStatLine[]> = {
+      2020: [
+        { player_id: "p1", player: { position: "RB" }, stats: { rush_td: 3, rec: 4, rec_td: 1 } }, // 18 + 2 + 6 = 26
+        { player_id: "p2", player: { position: "RB" }, stats: { rush_td: 1 } }, // 6
+        { player_id: "p3", player: { position: "WR" }, stats: { rec: 10, rec_td: 2 } }, // 5 + 12 = 17
+      ],
+    };
+    const league = normalize(raw, { config: FIXTURE_CONFIG, playerSeasonStats });
+    const rbs = league.playerSeasonFinishes.filter((f) => f.season === 2020 && f.position === "RB");
+    expect(rbs).toEqual([
+      { playerId: "p1", season: 2020, position: "RB", points: 26, positionRank: 1 },
+      { playerId: "p2", season: 2020, position: "RB", points: 6, positionRank: 2 },
+    ]);
+    const wrs = league.playerSeasonFinishes.filter((f) => f.season === 2020 && f.position === "WR");
+    expect(wrs).toEqual([{ playerId: "p3", season: 2020, position: "WR", points: 17, positionRank: 1 }]);
+  });
+
+  it("scores each week independently for the weekly-points pipeline", () => {
+    const playerWeeklyStats: Record<string, Record<string, SleeperPlayerStatLine>> = {
+      "p1-2020": {
+        "1": { player_id: "p1", stats: { rush_td: 1 } }, // 6
+        "2": { player_id: "p1", stats: { rec: 2, rec_td: 1 } }, // 1 + 6 = 7
+      },
+    };
+    const league = normalize(raw, { config: FIXTURE_CONFIG, playerWeeklyStats });
+    expect(league.playerWeeklyPoints).toEqual([
+      { playerId: "p1", season: 2020, week: 1, points: 6 },
+      { playerId: "p1", season: 2020, week: 2, points: 7 },
+    ]);
+  });
+
+  it("is empty when no player-stats options are given", () => {
+    const league = normalize(raw, { config: FIXTURE_CONFIG });
+    expect(league.playerSeasonFinishes).toEqual([]);
+    expect(league.playerWeeklyPoints).toEqual([]);
   });
 });
 

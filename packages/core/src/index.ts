@@ -1,10 +1,12 @@
 export * from "./sleeper/types";
 export * from "./sleeper/client";
+export * from "./sleeper/statsClient";
 export * from "./sleeper/history";
 export * from "./model/types";
 export { normalize, slugify, pairMatchups } from "./model/normalize";
 export * from "./stats";
 export * from "./snapshot";
 export * from "./store/types";
+export { scorePoints } from "./scoring";
 export { generateFixtureLeague, FixtureTransport, FIXTURE_CONFIG } from "./fixtures/generate";
 export { formatRecord, formatPoints, formatDate, ordinal } from "./format";

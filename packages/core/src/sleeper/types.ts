@@ -136,3 +136,17 @@ export interface SleeperPlayer {
   position?: string;
   team?: string | null;
 }
+
+/**
+ * One player's stat line from Sleeper's undocumented stats API
+ * (api.sleeper.com/stats/nfl/..., not part of the documented v1 API).
+ * `stats` holds raw per-category counts (rec, rush_yd, fgm_yds, ...); turning
+ * those into fantasy points for a specific league is scorePoints()'s job —
+ * never trust the API's own pts_std/half_ppr/ppr fields, they assume a fixed
+ * scoring format that may not match a given league's actual settings.
+ */
+export interface SleeperPlayerStatLine {
+  player_id: SleeperId;
+  stats: Record<string, number>;
+  player?: { position?: string | null; [key: string]: unknown };
+}
