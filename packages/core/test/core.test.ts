@@ -142,7 +142,16 @@ describe("stats", () => {
     const high = snap.stats.records.find((r) => r.id === "high-score")!;
     const max = Math.max(...snap.league.games.filter((g) => g.final).flatMap((g) => [g.home.points, g.away.points]));
     expect(high.value).toBe(max);
-    expect(high.runnersUp).toHaveLength(4);
+    expect(high.runnersUp).toHaveLength(9);
+  });
+
+  it("streak records carry a start and end week, in order", () => {
+    const streak = snap.stats.records.find((r) => r.id === "win-streak")!;
+    for (const h of [streak, ...streak.runnersUp]) {
+      expect(h.endSeason).toBeDefined();
+      expect(h.endWeek).toBeDefined();
+      expect(h.endSeason! > h.season! || (h.endSeason === h.season && h.endWeek! >= h.week!)).toBe(true);
+    }
   });
 
   it("expected wins sum to actual wins across a season (all-play is zero-sum)", () => {

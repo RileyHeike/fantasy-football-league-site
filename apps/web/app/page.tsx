@@ -3,7 +3,7 @@ import { formatPoints } from "@league/core";
 import { RingOfHonor } from "@/components/RingOfHonor";
 import { Scoreboard } from "@/components/Scoreboard";
 import { ManagerName, Rec, SectionTitle, Table, td, tdNum, th, thNum } from "@/components/ui";
-import { currentSeason, gamesFor, snapshot, stats } from "@/lib/data";
+import { buildMatchup, currentSeason, gamesFor, snapshot, stats } from "@/lib/data";
 import { StandingsTable } from "@/components/StandingsTable";
 
 const HEADLINE_RECORDS = ["high-score", "biggest-blowout", "win-streak"];
@@ -30,7 +30,7 @@ export default function Home() {
       <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr]">
         <section>
           <SectionTitle aside={weekLabel}>This week</SectionTitle>
-          {games.length ? <Scoreboard games={games} /> : <p className="text-chalk-dim">No games yet this season. The first scores show up after week 1.</p>}
+          {games.length ? <Scoreboard matchups={games.map((g) => buildMatchup(g))} /> : <p className="text-chalk-dim">No games yet this season. The first scores show up after week 1.</p>}
         </section>
 
         <section>

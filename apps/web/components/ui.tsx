@@ -1,7 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import { formatRecord } from "@league/core";
-import { jersey } from "@/lib/palette";
+import { ManagerBadge } from "./ManagerBadge";
 import { manager } from "@/lib/data";
 
 export function PageTitle({ children, sub }: { children: ReactNode; sub?: ReactNode }) {
@@ -25,20 +24,7 @@ export function SectionTitle({ children, aside }: { children: ReactNode; aside?:
 /** A manager's name with their jersey color. Links to their profile. */
 export function ManagerName({ id, sub, plain }: { id: string; sub?: ReactNode; plain?: boolean }) {
   const m = manager(id);
-  const inner = (
-    <span className="inline-flex items-center gap-2">
-      <span aria-hidden className="h-3 w-3 shrink-0 rounded-sm" style={{ background: jersey(m.colorIndex) }} />
-      <span>
-        <span className="font-medium">{m.name}</span>
-        {sub && <span className="block text-sm leading-tight text-chalk-dim">{sub}</span>}
-      </span>
-    </span>
-  );
-  return plain ? inner : (
-    <Link href={`/managers/${m.id}/`} className="hover:underline decoration-yardline underline-offset-4">
-      {inner}
-    </Link>
-  );
+  return <ManagerBadge name={m.name} colorIndex={m.colorIndex} sub={sub} href={plain ? undefined : `/managers/${m.id}/`} />;
 }
 
 export function Rec({ w, l, t = 0 }: { w: number; l: number; t?: number }) {

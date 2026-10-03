@@ -1,7 +1,9 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { assertSnapshot, type BracketMatch, type DraftPick, type Game, type LeagueSnapshot, type Manager, type Season, type Transaction } from "@league/core";
+import { assertSnapshot, formatPoints, type BracketMatch, type DraftPick, type Game, type GameSide, type LeagueRecord, type LeagueSnapshot, type Manager, type Season, type Transaction } from "@league/core";
+import type { MatchupData, MatchupSide } from "./matchup";
+import type { RecordCardView, RecordRowView } from "./recordView";
 
 /**
  * Build-time data access. Pages are statically rendered, so the snapshot is
@@ -76,4 +78,92 @@ export function draftPicksFor(year: number): DraftPick[] {
 
 export function hasDraft(year: number): boolean {
   return draftPicksFor(year).length > 0;
+}
+
+export function gameById(id: string): Game | undefined {
+  return league().games.find((g) => g.id === id);
+}
+
+/** A manager's last game played in a season — regular season finale, or their last playoff/consolation game. */
+export function finalGameFor(managerId: string, year: number): Game | undefined {
+  return gamesFor(year)
+    .filter((g) => g.final && (g.home.managerId === managerId || g.away.managerId === managerId))
+    .sort((a, b) => b.week - a.week)[0];
+}
+
+function matchupSide(g: Game, s: GameSide): MatchupSide {
+  const m = manager(s.managerId);
+  const opponent = g.home.managerId === s.managerId ? g.away : g.home;
+  const line = (p: { playerId: string; points: number }) => ({
+    playerId: p.playerId,
+    name: playerName(p.playerId),
+    position: playerPosition(p.playerId),
+    points: p.points,
+  });
+  return {
+    managerId: s.managerId,
+    managerName: m.name,
+    colorIndex: m.colorIndex,
+    teamName: teamName(s.managerId, g.season),
+    points: s.points,
+    // Ahead on points, not just the final winner — keeps a leader highlighted while a week is still live.
+    won: s.points > opponent.points,
+    starters: (s.starters ?? []).map(line),
+    bench: (s.bench ?? []).map(line),
+  };
+}
+
+/** Plain, serializable snapshot of a game for client-rendered modals (see lib/matchup.ts). */
+export function buildMatchup(g: Game, label?: string): MatchupData {
+  const kindLabel = g.kind === "playoff" ? "Playoffs" : g.kind === "consolation" ? "Consolation" : undefined;
+  return {
+    id: g.id,
+    label: label ?? `Week ${g.week}, ${g.season}${kindLabel ? ` · ${kindLabel}` : ""}`,
+    final: g.final,
+    home: matchupSide(g, g.home),
+    away: matchupSide(g, g.away),
+  };
+}
+
+type RecordHolder = Omit<LeagueRecord, "runnersUp" | "label" | "category" | "unit" | "id">;
+
+function whenText(h: RecordHolder): string {
+  if (h.week !== undefined && h.endWeek !== undefined) {
+    if (h.endSeason === h.season) {
+      return h.week === h.endWeek ? `Week ${h.week}, ${h.season}` : `Weeks ${h.week}–${h.endWeek}, ${h.season}`;
+    }
+    return `Week ${h.week}, ${h.season} – Week ${h.endWeek}, ${h.endSeason}`;
+  }
+  return h.week ? `Week ${h.week}, ${h.season}` : String(h.season);
+}
+
+/** Plain, serializable view of a record's top-10 leaderboard, with matchups resolved for drill-down rows. */
+export function buildRecordCard(r: LeagueRecord): RecordCardView {
+  const fmtValue = (v: number) => (r.unit === "pts" ? formatPoints(v) : String(v));
+  const holders: RecordHolder[] = [
+    { value: r.value, managerId: r.managerId, opponentId: r.opponentId, season: r.season, week: r.week, gameId: r.gameId, endSeason: r.endSeason, endWeek: r.endWeek },
+    ...r.runnersUp,
+  ];
+  const rows: RecordRowView[] = holders.map((h, i) => {
+    const m = manager(h.managerId);
+    let matchup: MatchupData | undefined;
+    if (r.category === "game" && h.gameId) {
+      const g = gameById(h.gameId);
+      if (g) matchup = buildMatchup(g);
+    } else if (r.category === "season") {
+      const g = finalGameFor(h.managerId, h.season);
+      if (g) matchup = buildMatchup(g, `${m.name} — final week of ${h.season}`);
+    }
+    return { rank: i + 1, managerId: h.managerId, managerName: m.name, colorIndex: m.colorIndex, valueText: fmtValue(h.value), whenText: whenText(h), matchup };
+  });
+  return {
+    id: r.id,
+    label: r.label,
+    category: r.category,
+    valueText: fmtValue(r.value),
+    whenText: whenText(r),
+    managerName: rows[0]!.managerName,
+    colorIndex: rows[0]!.colorIndex,
+    rows,
+  };
 }

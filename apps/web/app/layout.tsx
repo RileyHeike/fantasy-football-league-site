@@ -7,6 +7,7 @@ import "@fontsource/barlow/500.css";
 import "@fontsource/barlow/600.css";
 import "./globals.css";
 import { MobileTabBar, SiteHeader } from "@/components/Nav";
+import { ModalProvider } from "@/components/modal/ModalProvider";
 import { themeScript } from "@/components/ThemeToggle";
 import { league, snapshot } from "@/lib/data";
 
@@ -25,17 +26,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4">
-          Skip to content
-        </a>
-        <SiteHeader leagueName={league().leagueName} />
-        <main id="main" className="mx-auto max-w-6xl px-5 pb-28 pt-10 md:pb-16">
-          {children}
-        </main>
-        <footer className="mx-auto max-w-6xl px-5 pb-28 text-sm text-chalk-dim md:pb-10">
-          Data from Sleeper, updated {updated.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
-        </footer>
-        <MobileTabBar />
+        <ModalProvider>
+          <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4">
+            Skip to content
+          </a>
+          <SiteHeader leagueName={league().leagueName} />
+          <main id="main" className="mx-auto max-w-6xl px-5 pb-28 pt-10 md:pb-16">
+            {children}
+          </main>
+          <footer className="mx-auto max-w-6xl px-5 pb-28 text-sm text-chalk-dim md:pb-10">
+            Data from Sleeper, updated {updated.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
+          </footer>
+          <MobileTabBar />
+        </ModalProvider>
       </body>
     </html>
   );

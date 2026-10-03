@@ -12,13 +12,16 @@ export interface LeagueRecord {
   season: number;
   week?: number;
   gameId?: string;
+  /** End of the range, for streak records (week/season may differ from the start above). */
+  endSeason?: number;
+  endWeek?: number;
   /** Top N holders so pages can show a leaderboard, best first. */
   runnersUp: Omit<LeagueRecord, "runnersUp" | "label" | "category" | "unit" | "id">[];
 }
 
 type Holder = LeagueRecord["runnersUp"][number];
 
-const TOP = 5;
+const TOP = 10;
 
 function gameRecord(
   ctx: StatContext,
@@ -50,12 +53,23 @@ function longestStreaks(ctx: StatContext, want: "W" | "L"): Holder[] {
       .sort((a, b) => a.game.season - b.game.season || a.game.week - b.game.week);
     let run = 0;
     let start: Perspective | undefined;
+    let end: Perspective | undefined;
     const close = () => {
-      if (run > 0 && start) best.push({ value: run, managerId: m.id, season: start.game.season, week: start.game.week });
+      if (run > 0 && start && end) {
+        best.push({
+          value: run,
+          managerId: m.id,
+          season: start.game.season,
+          week: start.game.week,
+          endSeason: end.game.season,
+          endWeek: end.game.week,
+        });
+      }
     };
     for (const r of rows) {
       if (r.result === want) {
         if (run === 0) start = r;
+        end = r;
         run++;
       } else {
         close();
