@@ -22,11 +22,15 @@ export async function handler() {
     return { ok: true, skipped: true };
   }
 
+  // Names any player who was never drafted (waiver/free-agent pickups) but appeared in a box score.
+  const players = await client.players();
+
   await runSync({
     client,
     raw: new S3RawStore(s3, bucket),
     snapshots: new S3SnapshotStore(s3, bucket),
     config: config as LeagueConfig,
+    players,
   });
 
   const param = process.env.BUILD_HOOK_PARAM;

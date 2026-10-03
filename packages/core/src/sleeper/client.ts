@@ -5,6 +5,7 @@ import type {
   SleeperLeague,
   SleeperMatchup,
   SleeperNflState,
+  SleeperPlayer,
   SleeperRoster,
   SleeperTransaction,
   SleeperUser,
@@ -109,5 +110,9 @@ export class SleeperClient {
   }
   draftPicks(draftId: string) {
     return this.t.get<SleeperDraftPick[]>(`/draft/${draftId}/picks`);
+  }
+  /** Every NFL player Sleeper knows about, keyed by id. Several MB — Sleeper asks this be fetched sparingly (about once a day). */
+  players() {
+    return this.t.get<Record<string, SleeperPlayer>>("/players/nfl");
   }
 }

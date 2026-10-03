@@ -33,10 +33,15 @@ if (!leagueId || leagueId === "YOUR_SLEEPER_LEAGUE_ID") {
 
 const out = values.out!;
 const dir = fixture ? join(out, "fixture") : out;
+const client = new SleeperClient(transport);
+// Names any player who was never drafted (waiver/free-agent pickups) but appeared in a box score.
+// Skipped for the fixture demo, which has no network and synthesizes its own player metadata.
+const players = fixture ? undefined : await client.players();
 await runSync({
-  client: new SleeperClient(transport),
+  client,
   raw: new FileRawStore(join(dir, "raw")),
   snapshots: new FileSnapshotStore(join(out, "snapshot.json")),
   config,
   leagueId,
+  players,
 });
