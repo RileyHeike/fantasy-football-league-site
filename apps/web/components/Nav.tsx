@@ -8,6 +8,8 @@ const LINKS = [
   { href: "/managers/", label: "Managers" },
   { href: "/rivalries/", label: "Rivalries" },
   { href: "/history/", label: "History" },
+  { href: "/transactions/", label: "Transactions" },
+  { href: "/draft/", label: "Draft" },
 ];
 
 export function SiteHeader({ leagueName }: { leagueName: string }) {
@@ -40,10 +42,10 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-10 border-t border-yardline bg-field/95 backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="grid grid-cols-6 text-center text-xs">
+      <ul className="grid grid-cols-8 text-center text-[11px]">
         {LINKS.map((l) => (
           <li key={l.href}>
-            <Link href={l.href} className="block py-3 text-chalk-dim hover:text-chalk">
+            <Link href={l.href} className="block px-0.5 py-3 leading-tight text-chalk-dim hover:text-chalk">
               {l.label}
             </Link>
           </li>

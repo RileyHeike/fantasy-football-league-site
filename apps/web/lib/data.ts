@@ -1,7 +1,7 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { assertSnapshot, type Game, type LeagueSnapshot, type Manager, type Season } from "@league/core";
+import { assertSnapshot, type BracketMatch, type DraftPick, type Game, type LeagueSnapshot, type Manager, type Season, type Transaction } from "@league/core";
 
 /**
  * Build-time data access. Pages are statically rendered, so the snapshot is
@@ -48,4 +48,32 @@ export function gamesFor(year: number, week?: number): Game[] {
 
 export function playerName(id: string): string {
   return league().players[id]?.name ?? (/^[A-Z]{2,3}$/.test(id) ? `${id} D/ST` : `Player ${id}`);
+}
+
+export function playerPosition(id: string): string | undefined {
+  return league().players[id]?.position ?? (/^[A-Z]{2,3}$/.test(id) ? "DEF" : undefined);
+}
+
+/** The scored Game behind a bracket match, once both sides are known. */
+export function bracketGame(year: number, b: BracketMatch): Game | undefined {
+  if (!b.team1 || !b.team2) return undefined;
+  const s = season(year);
+  if (!s) return undefined;
+  const week = s.regularSeasonWeeks + b.round;
+  const pair = [b.team1, b.team2].sort().join();
+  return gamesFor(year, week).find(
+    (g) => (g.kind === "playoff" || g.kind === "consolation") && [g.home.managerId, g.away.managerId].sort().join() === pair,
+  );
+}
+
+export function transactionsFor(year: number): Transaction[] {
+  return [...league().transactions.filter((t) => t.season === year)].sort((a, b) => b.created - a.created);
+}
+
+export function draftPicksFor(year: number): DraftPick[] {
+  return league().draftPicks.filter((p) => p.season === year);
+}
+
+export function hasDraft(year: number): boolean {
+  return draftPicksFor(year).length > 0;
 }

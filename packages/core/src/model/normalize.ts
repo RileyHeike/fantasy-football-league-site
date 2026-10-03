@@ -2,6 +2,7 @@ import type { RawSeason } from "../sleeper/history";
 import { lastWeekOf } from "../sleeper/history";
 import type { SleeperBracketMatch, SleeperMatchup, SleeperPlayer, SleeperUser } from "../sleeper/types";
 import type {
+  BracketMatch,
   DraftPick,
   Game,
   GameKind,
@@ -123,6 +124,8 @@ export function normalize(raw: RawSeason[], opts: NormalizeOptions = {}): League
       lastWeek: lastWeekOf(rs.league),
       teams,
       placements,
+      winnersBracket: mapBracket(rs.winnersBracket, m),
+      losersBracket: mapBracket(rs.losersBracket, m),
     });
 
     for (const tx of rs.transactions) {
@@ -201,6 +204,26 @@ export function pairMatchups(rows: SleeperMatchup[]): [SleeperMatchup, SleeperMa
 
 const pairKey = (week: number, r1: number, r2: number) =>
   `${week}:${Math.min(r1, r2)}-${Math.max(r1, r2)}`;
+
+/** Resolves a bracket's roster_ids to managerIds, keeping the round/match tree intact. */
+function mapBracket(
+  bracket: SleeperBracketMatch[],
+  m: (r: number | null | undefined) => string | undefined,
+): BracketMatch[] {
+  const from = (ref?: { w?: number; l?: number }) =>
+    !ref ? undefined : ref.w != null ? { match: ref.w, result: "winner" as const } : { match: ref.l!, result: "loser" as const };
+  return bracket.map((b) => ({
+    round: b.r,
+    match: b.m,
+    placement: b.p,
+    team1: m(b.t1) ?? null,
+    team2: m(b.t2) ?? null,
+    team1From: from(b.t1_from),
+    team2From: from(b.t2_from),
+    winnerId: m(b.w) ?? null,
+    loserId: m(b.l) ?? null,
+  }));
+}
 
 function bracketIndex(bracket: SleeperBracketMatch[], playoffStart: number) {
   const idx = new Map<string, SleeperBracketMatch>();

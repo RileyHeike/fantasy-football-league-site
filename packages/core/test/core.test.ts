@@ -90,6 +90,28 @@ describe("normalize", () => {
     }
     expect(snap.league.seasons.at(-1)!.placements).toEqual({});
   });
+
+  it("builds a resolvable winners-bracket tree with managerIds", () => {
+    const s2020 = snap.league.seasons.find((s) => s.year === 2020)!;
+    expect(s2020.winnersBracket).toHaveLength(7);
+    const final = s2020.winnersBracket.find((b) => b.placement === 1)!;
+    expect(final.round).toBe(3);
+    expect(final.team1From).toBeDefined();
+    expect(final.team2From).toBeDefined();
+    expect(final.winnerId).toBe(s2020.placements.champion);
+    const round1 = s2020.winnersBracket.filter((b) => b.round === 1);
+    for (const b of round1) {
+      expect(typeof b.team1).toBe("string");
+      expect(typeof b.team2).toBe("string");
+      expect(b.winnerId === b.team1 || b.winnerId === b.team2).toBe(true);
+    }
+  });
+
+  it("has no bracket yet for a season still in its regular season", () => {
+    const current = snap.league.seasons.at(-1)!;
+    expect(current.winnersBracket).toEqual([]);
+    expect(current.losersBracket).toEqual([]);
+  });
 });
 
 describe("stats", () => {

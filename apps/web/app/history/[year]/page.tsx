@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { formatPoints, type Game } from "@league/core";
+import { BracketView } from "@/components/BracketView";
 import { StandingsTable } from "@/components/StandingsTable";
 import { ManagerName, PageTitle, SectionTitle, Table, td, tdNum, th, thNum } from "@/components/ui";
 import { gamesFor, league, season, stats } from "@/lib/data";
@@ -14,14 +14,11 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   return { title: `${(await params).year} season` };
 }
 
-const ROUND_NAME: Record<number, string> = { 1: "Championship", 3: "Third place", 5: "Fifth place" };
-
 export default async function SeasonPage({ params }: { params: Promise<{ year: string }> }) {
   const year = Number((await params).year);
   const s = season(year);
   if (!s) notFound();
   const games = gamesFor(year);
-  const playoffs = games.filter((g) => g.kind === "playoff").sort((a, b) => b.week - a.week || (a.placement ?? 9) - (b.placement ?? 9));
   const regular = games.filter((g) => g.kind === "regular" && g.final);
   const weeks = [...new Set(regular.map((g) => g.week))].sort((a, b) => a - b);
   const standings = stats().standings.bySeason[year] ?? [];
@@ -41,12 +38,17 @@ export default async function SeasonPage({ params }: { params: Promise<{ year: s
         <StandingsTable lines={standings} year={year} />
       </section>
 
-      {playoffs.length > 0 && (
+      {s.winnersBracket.length > 0 && (
         <section className="mb-14">
-          <SectionTitle>Playoffs</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2">
-            {playoffs.map((g) => <PlayoffGame key={g.id} g={g} />)}
-          </ul>
+          <SectionTitle>Playoff bracket</SectionTitle>
+          <BracketView bracket={s.winnersBracket} year={year} />
+        </section>
+      )}
+
+      {s.losersBracket.length > 0 && (
+        <section className="mb-14">
+          <SectionTitle aside="Loser plays on">Consolation bracket</SectionTitle>
+          <BracketView bracket={s.losersBracket} year={year} />
         </section>
       )}
 
@@ -83,23 +85,5 @@ export default async function SeasonPage({ params }: { params: Promise<{ year: s
         </section>
       )}
     </>
-  );
-}
-
-function PlayoffGame({ g }: { g: Game }) {
-  const label = g.placement ? ROUND_NAME[g.placement] ?? `Week ${g.week}` : `Week ${g.week}`;
-  const isFinal = g.placement === 1;
-  return (
-    <li className={`rounded-lg border px-4 py-3 ${isFinal ? "border-gold" : "border-yardline"}`}>
-      <p className={`mb-1 text-sm ${isFinal ? "text-gold" : "text-chalk-dim"}`}>{label}</p>
-      {[g.home, g.away].map((side) => (
-        <div key={side.managerId} className="flex items-center justify-between py-1">
-          <ManagerName id={side.managerId} />
-          <span className={`num font-display text-2xl font-bold ${g.winnerId === side.managerId ? "" : "text-chalk-dim"}`}>
-            {formatPoints(side.points)}
-          </span>
-        </div>
-      ))}
-    </li>
   );
 }

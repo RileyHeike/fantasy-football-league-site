@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "test": "npm run test -w @league/core",
-    "typecheck": "npm run typecheck -w @league/core && npm run typecheck -w @league/sync",
+    "typecheck": "npm run typecheck -w @league/core && npm run typecheck -w @league/sync && npm run typecheck -w @league/web",
     "sync:fixture": "npm run sync -w @league/sync -- --fixture",
     "sync": "npm run sync -w @league/sync --",
     "dev": "npm run dev -w @league/web",

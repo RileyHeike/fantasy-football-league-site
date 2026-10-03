@@ -38,6 +38,8 @@ export interface Season {
   lastWeek: number;
   teams: SeasonTeam[];
   placements: SeasonPlacements;
+  winnersBracket: BracketMatch[];
+  losersBracket: BracketMatch[];
 }
 
 export interface SeasonPlacements {
@@ -46,6 +48,22 @@ export interface SeasonPlacements {
   third?: string;
   /** "Toilet bowl" loser, per league config. */
   last?: string;
+}
+
+/** One game in a playoff or consolation bracket tree. */
+export interface BracketMatch {
+  round: number;
+  match: number;
+  /** Placement this match decides (1 = final, 3 = third place, 5 = fifth...), if any. */
+  placement?: number;
+  /** Participant, or null when not yet determined (advances from another match) or a bye. */
+  team1: string | null;
+  team2: string | null;
+  /** Where team1/team2 come from, when not a direct seed. */
+  team1From?: { match: number; result: "winner" | "loser" };
+  team2From?: { match: number; result: "winner" | "loser" };
+  winnerId: string | null;
+  loserId: string | null;
 }
 
 export type GameKind = "regular" | "playoff" | "consolation";

@@ -9,6 +9,7 @@ apps/web/out/
 # Sync output (local CLI runs; raw seasons + snapshot live in S3 on AWS)
 data/raw/
 data/snapshot.json
+data/fixture/
 
 # CDK
 infra/cdk.out/
@@ -22,6 +23,9 @@ infra/.cdk.staging/
 .DS_Store
 .vscode/
 .idea/
+
+# Claude Code local-only settings (personal permissions, not shared)
+.claude/settings.local.json
 
 # Logs
 npm-debug.log*

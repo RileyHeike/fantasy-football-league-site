@@ -4,6 +4,10 @@ export const formatPoints = (n: number) =>
 
 export const formatRecord = (w: number, l: number, t = 0) => (t ? `${w}-${l}-${t}` : `${w}-${l}`);
 
+/** UTC-pinned so a static build's output doesn't depend on the build machine's timezone. */
+export const formatDate = (epochMs: number) =>
+  new Date(epochMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
 export function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;

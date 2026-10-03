@@ -7,4 +7,4 @@ export * from "./stats";
 export * from "./snapshot";
 export * from "./store/types";
 export { generateFixtureLeague, FixtureTransport, FIXTURE_CONFIG } from "./fixtures/generate";
-export { formatRecord, formatPoints, ordinal } from "./format";
+export { formatRecord, formatPoints, formatDate, ordinal } from "./format";
