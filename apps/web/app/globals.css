@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * "Night game" design tokens.
+ * Field Night base, Chalk ink, Trophy Gold reserved for champions and records.
+ * Win/Loss colors are only for results. Every color is a variable so the light
+ * theme (cool chalkboard paper) swaps in without touching components.
+ */
+:root {
+  --field: #0e1a2b;        /* page background: stadium night */
+  --field-raised: #142338; /* panels */
+  --field-sunk: #0a1422;   /* table stripes, wells */
+  --yardline: #263a52;     /* rules and borders */
+  --chalk: #e9eef2;        /* primary text */
+  --chalk-dim: #9aabbd;    /* secondary text */
+  --gold: #e8b04b;         /* trophies, records, the champion */
+  --gold-ink: #1d1404;     /* text on gold */
+  --win: #3fb67a;
+  --loss: #e05a4f;
+  --focus: #7cc4ff;
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --field: #eef2f5;
+  --field-raised: #ffffff;
+  --field-sunk: #e3e9ee;
+  --yardline: #c9d3dc;
+  --chalk: #0e1a2b;
+  --chalk-dim: #50627a;
+  --gold: #a86f0e;
+  --gold-ink: #ffffff;
+  --win: #1f8a55;
+  --loss: #c03b31;
+  --focus: #1f6fbf;
+  color-scheme: light;
+}
+
+@theme {
+  --color-field: var(--field);
+  --color-field-raised: var(--field-raised);
+  --color-field-sunk: var(--field-sunk);
+  --color-yardline: var(--yardline);
+  --color-chalk: var(--chalk);
+  --color-chalk-dim: var(--chalk-dim);
+  --color-gold: var(--gold);
+  --color-gold-ink: var(--gold-ink);
+  --color-win: var(--win);
+  --color-loss: var(--loss);
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-sans: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+
+html {
+  background: var(--field);
+  color: var(--chalk);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100dvh;
+  line-height: 1.5;
+}
+
+/* Scores and stats line up in columns. */
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The one orchestrated moment: champion banners drop in on first load. */
+@keyframes banner-drop {
+  from { transform: translateY(-14px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+.banner-drop {
+  animation: banner-drop 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}

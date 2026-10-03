@@ -1,0 +1,21 @@
+# Amplify Hosting build spec. The build role (AmplifyBuildRoleArn output from
+# the CDK stack) lets this download the snapshot the nightly sync produced.
+# Set DATA_BUCKET as an Amplify environment variable.
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+        - aws s3 cp "s3://${DATA_BUCKET}/snapshot/latest.json" data/snapshot.json
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: apps/web/out
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+      - apps/web/.next/cache/**/*

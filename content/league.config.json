@@ -1,0 +1,7 @@
+{
+  "leagueId": "YOUR_SLEEPER_LEAGUE_ID",
+  "name": "Your League Name",
+  "managers": [],
+  "trophies": { "champion": "The Cup", "last": "The Wooden Spoon" },
+  "lastPlaceRule": "regularSeason"
+}

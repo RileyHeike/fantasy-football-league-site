@@ -1,0 +1,22 @@
+{
+  "name": "league-site",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @league/core",
+    "typecheck": "npm run typecheck -w @league/core && npm run typecheck -w @league/sync",
+    "sync:fixture": "npm run sync -w @league/sync -- --fixture",
+    "sync": "npm run sync -w @league/sync --",
+    "dev": "npm run dev -w @league/web",
+    "build": "npm run build -w @league/web"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}
