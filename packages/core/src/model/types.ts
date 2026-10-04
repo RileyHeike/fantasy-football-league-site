@@ -129,6 +129,16 @@ export interface PlayerSeasonFinish {
   points: number;
   /** 1 = the best fantasy season at that position that year. */
   positionRank: number;
+  gamesPlayed: number;
+  /**
+   * The full raw per-category stat line Sleeper returned, verbatim. Season
+   * stats are fetched once, the moment a season completes, then cached
+   * forever and never refetched — so this is the only chance to capture
+   * fields we don't derive a typed value for yet (snap share, red-zone
+   * usage, ...). Untyped and sourced from an undocumented API: fine for
+   * experimentation, don't build load-bearing logic on specific keys.
+   */
+  rawStats: Record<string, number>;
 }
 
 /**

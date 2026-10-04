@@ -7,7 +7,8 @@ import { computeAll, type StatResults } from "./stats";
  * The single artifact the website reads at build time. Bump SCHEMA_VERSION on
  * breaking changes so an old snapshot is rejected instead of half-rendering.
  */
-export const SCHEMA_VERSION = 3;
+// Bumped 3 -> 4: PlayerSeasonFinish gained gamesPlayed and rawStats.
+export const SCHEMA_VERSION = 4;
 
 export interface LeagueSnapshot {
   schemaVersion: number;

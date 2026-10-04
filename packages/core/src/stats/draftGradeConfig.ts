@@ -13,6 +13,13 @@ export interface DraftGradeConfig {
   positions: readonly GradedPosition[];
   /** Breakpoints on the normalized [-1, 1] score. Checked highest `min` first. */
   gradeBreakpoints: { min: number; grade: Grade }[];
+  /** Blend weights for the two scoring signals. Should sum to 1 so the blended score stays in [-1, 1]. */
+  rankDeltaWeight: number;
+  pointsDeltaWeight: number;
+  /** Applied to both season and career averages — how much an early-round pick outweighs a late-round one. */
+  roundWeight: (round: number) => number;
+  /** A pick is graded only if its player played at least this fraction of that season's max games played. */
+  minGamesPlayedFraction: number;
 }
 
 export const DEFAULT_DRAFT_GRADE_CONFIG: DraftGradeConfig = {
@@ -30,4 +37,8 @@ export const DEFAULT_DRAFT_GRADE_CONFIG: DraftGradeConfig = {
     { min: -0.5, grade: "D" },
     { min: -Infinity, grade: "F" },
   ],
+  rankDeltaWeight: 0.25,
+  pointsDeltaWeight: 0.75,
+  roundWeight: (round) => 1 / round,
+  minGamesPlayedFraction: 0.5,
 };

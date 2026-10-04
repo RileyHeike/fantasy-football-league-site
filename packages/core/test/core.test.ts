@@ -135,7 +135,7 @@ describe("player-finish pipeline", () => {
   it("ranks players within position by points scored under that season's own settings", () => {
     const playerSeasonStats: Record<number, SleeperPlayerStatLine[]> = {
       2020: [
-        { player_id: "p1", player: { position: "RB" }, stats: { rush_td: 3, rec: 4, rec_td: 1 } }, // 18 + 2 + 6 = 26
+        { player_id: "p1", player: { position: "RB" }, stats: { rush_td: 3, rec: 4, rec_td: 1, gp: 14 } }, // 18 + 2 + 6 = 26
         { player_id: "p2", player: { position: "RB" }, stats: { rush_td: 1 } }, // 6
         { player_id: "p3", player: { position: "WR" }, stats: { rec: 10, rec_td: 2 } }, // 5 + 12 = 17
       ],
@@ -143,11 +143,13 @@ describe("player-finish pipeline", () => {
     const league = normalize(raw, { config: FIXTURE_CONFIG, playerSeasonStats });
     const rbs = league.playerSeasonFinishes.filter((f) => f.season === 2020 && f.position === "RB");
     expect(rbs).toEqual([
-      { playerId: "p1", season: 2020, position: "RB", points: 26, positionRank: 1 },
-      { playerId: "p2", season: 2020, position: "RB", points: 6, positionRank: 2 },
+      { playerId: "p1", season: 2020, position: "RB", points: 26, positionRank: 1, gamesPlayed: 14, rawStats: playerSeasonStats[2020]![0]!.stats },
+      { playerId: "p2", season: 2020, position: "RB", points: 6, positionRank: 2, gamesPlayed: 0, rawStats: playerSeasonStats[2020]![1]!.stats },
     ]);
     const wrs = league.playerSeasonFinishes.filter((f) => f.season === 2020 && f.position === "WR");
-    expect(wrs).toEqual([{ playerId: "p3", season: 2020, position: "WR", points: 17, positionRank: 1 }]);
+    expect(wrs).toEqual([
+      { playerId: "p3", season: 2020, position: "WR", points: 17, positionRank: 1, gamesPlayed: 0, rawStats: playerSeasonStats[2020]![2]!.stats },
+    ]);
   });
 
   it("scores each week independently for the weekly-points pipeline", () => {

@@ -200,19 +200,21 @@ function computeSeasonFinishes(
     const season = Number(seasonStr);
     const scoring = scoringBySeason.get(season);
     if (!scoring) continue;
-    const byPosition = new Map<string, { playerId: string; points: number }[]>();
+    const byPosition = new Map<string, { playerId: string; points: number; gamesPlayed: number; rawStats: Record<string, number> }[]>();
     for (const line of lines) {
       const position = line.player?.position;
       // Sleeper's position filter isn't exclusive (a player with multiple fantasy_positions can come
       // back from more than one query), so filter to the positions this league actually rosters.
       if (!position || !line.stats || !(FANTASY_POSITIONS as readonly string[]).includes(position)) continue;
       const list = byPosition.get(position) ?? [];
-      list.push({ playerId: line.player_id, points: scorePoints(line.stats, scoring) });
+      list.push({ playerId: line.player_id, points: scorePoints(line.stats, scoring), gamesPlayed: line.stats.gp ?? 0, rawStats: line.stats });
       byPosition.set(position, list);
     }
     for (const [position, entries] of byPosition) {
       entries.sort((a, b) => b.points - a.points);
-      entries.forEach((e, i) => out.push({ playerId: e.playerId, season, position, points: e.points, positionRank: i + 1 }));
+      entries.forEach((e, i) =>
+        out.push({ playerId: e.playerId, season, position, points: e.points, positionRank: i + 1, gamesPlayed: e.gamesPlayed, rawStats: e.rawStats }),
+      );
     }
   }
   return out;

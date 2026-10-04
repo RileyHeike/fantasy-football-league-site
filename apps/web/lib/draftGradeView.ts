@@ -1,5 +1,4 @@
-/** Plain view of one graded pick, built server-side for client-rendered modals. */
-export interface DraftGradePickRowView {
+interface DraftGradePickRowBase {
   playerId: string;
   playerName: string;
   position: string;
@@ -7,11 +6,14 @@ export interface DraftGradePickRowView {
   pickNo: number;
   /** e.g. "WR28" — the 28th player at this position taken that season. */
   draftRankText: string;
-  /** e.g. "WR5" — how the player actually finished that season at the position. */
+  /** e.g. "WR5", or "N/A" if the player has no season finish data at all. */
   finishRankText: string;
-  grade: string;
-  gradeColor: string;
 }
+
+/** Plain view of one pick, built server-side for client-rendered modals — graded, or N/A with why. */
+export type DraftGradePickRowView =
+  | (DraftGradePickRowBase & { graded: true; grade: string; gradeColor: string })
+  | (DraftGradePickRowBase & { graded: false; reasonLabel: string });
 
 export interface DraftGradeSeasonRowView {
   managerId: string;

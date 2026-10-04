@@ -1,7 +1,8 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { assertSnapshot, formatPoints, type BracketMatch, type DraftPick, type Game, type GameSide, type GradedPick, type LeagueRecord, type LeagueSnapshot, type Manager, type ManagerCareerGrade, type ManagerSeasonGrade, type Season, type Transaction } from "@league/core";
+import { assertSnapshot, formatPoints, pickDetailsForSeason, type BracketMatch, type DraftPick, type Game, type GameSide, type LeagueRecord, type LeagueSnapshot, type Manager, type ManagerCareerGrade, type ManagerSeasonGrade, type PickGrade, type Season, type Transaction, type UngradedReason } from "@league/core";
+import type { DraftBoardPickView } from "./draftBoardView";
 import type { DraftGradeCareerRowView, DraftGradeLeaderboardView, DraftGradePickRowView, DraftGradeSeasonRowView } from "./draftGradeView";
 import { gradeColor } from "./grades";
 import type { MatchupData, MatchupSide } from "./matchup";
@@ -80,6 +81,23 @@ export function draftPicksFor(year: number): DraftPick[] {
 
 export function hasDraft(year: number): boolean {
   return draftPicksFor(year).length > 0;
+}
+
+/** Plain lookup for the draft board's click-through modal, every position — keyed by playerId. */
+export function buildDraftBoardView(year: number): Map<string, DraftBoardPickView> {
+  const details = pickDetailsForSeason(league().draftPicks, league().playerSeasonFinishes, league().players, year);
+  const out = new Map<string, DraftBoardPickView>();
+  for (const d of details) {
+    out.set(d.playerId, {
+      playerId: d.playerId,
+      playerName: playerName(d.playerId),
+      position: d.position,
+      draftRankText: `${d.position}${d.draftRank}`,
+      finishRankText: d.finish ? `${d.position}${d.finish.finishRank}` : "N/A",
+      pointsPerGameText: d.finish ? formatPoints(d.finish.pointsPerGame) : "N/A",
+    });
+  }
+  return out;
 }
 
 export function gameById(id: string): Game | undefined {
@@ -170,18 +188,23 @@ export function buildRecordCard(r: LeagueRecord): RecordCardView {
   };
 }
 
-function draftGradePickRow(p: GradedPick): DraftGradePickRowView {
-  return {
+const UNGRADED_REASON_LABELS: Record<UngradedReason, string> = {
+  "no-finish-data": "No stats recorded",
+  "insufficient-games-played": "Played less than half the season",
+};
+
+function draftGradePickRow(p: PickGrade): DraftGradePickRowView {
+  const base = {
     playerId: p.playerId,
     playerName: playerName(p.playerId),
     position: p.position,
     round: p.round,
     pickNo: p.pickNo,
     draftRankText: `${p.position}${p.draftRank}`,
-    finishRankText: `${p.position}${p.finishRank}`,
-    grade: p.grade,
-    gradeColor: gradeColor(p.grade),
+    finishRankText: p.finish ? `${p.position}${p.finish.finishRank}` : "N/A",
   };
+  if (p.graded) return { ...base, graded: true, grade: p.grade, gradeColor: gradeColor(p.grade) };
+  return { ...base, graded: false, reasonLabel: UNGRADED_REASON_LABELS[p.reason] };
 }
 
 function draftGradeSeasonRow(row: ManagerSeasonGrade): DraftGradeSeasonRowView {

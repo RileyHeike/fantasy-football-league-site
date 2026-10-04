@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
+import { DraftBoardCell } from "@/components/DraftBoardCell";
 import { ManagerName, PageTitle, Table, td, th } from "@/components/ui";
-import { draftPicksFor, league, playerName, playerPosition, season } from "@/lib/data";
+import { buildDraftBoardView, draftPicksFor, league, playerName, playerPosition, season } from "@/lib/data";
 
 export function generateStaticParams() {
   return league()
@@ -21,6 +22,7 @@ export default async function DraftPage({ params }: { params: Promise<{ year: st
   const teamCount = s.teams.length;
   const rounds = [...new Set(picks.map((p) => p.round))].sort((a, b) => a - b);
   const bySlot = new Map(picks.map((p) => [`${p.round}:${p.pickNo - (p.round - 1) * teamCount}`, p]));
+  const boardViews = buildDraftBoardView(year);
 
   return (
     <>
@@ -45,10 +47,14 @@ export default async function DraftPage({ params }: { params: Promise<{ year: st
                     {p && (
                       <div className="min-w-32">
                         <ManagerName id={p.managerId} plain />
-                        <p className="text-sm text-chalk-dim">
-                          {playerName(p.playerId)}
-                          {playerPosition(p.playerId) && ` · ${playerPosition(p.playerId)}`}
-                        </p>
+                        {boardViews.get(p.playerId) ? (
+                          <DraftBoardCell view={boardViews.get(p.playerId)} />
+                        ) : (
+                          <p className="text-sm text-chalk-dim">
+                            {playerName(p.playerId)}
+                            {playerPosition(p.playerId) && ` · ${playerPosition(p.playerId)}`}
+                          </p>
+                        )}
                       </div>
                     )}
                   </td>

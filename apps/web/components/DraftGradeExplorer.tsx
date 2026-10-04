@@ -15,6 +15,17 @@ function GradeBadge({ grade, color }: { grade: string; color: string }) {
   );
 }
 
+function NABadge({ reasonLabel }: { reasonLabel: string }) {
+  return (
+    <span
+      title={reasonLabel}
+      className="num inline-flex min-w-10 items-center justify-center rounded border border-yardline px-2 py-1 text-center font-display text-lg font-bold text-chalk-dim"
+    >
+      N/A
+    </span>
+  );
+}
+
 function PickList({ picks }: { picks: DraftGradePickRowView[] }) {
   return (
     <ol className="space-y-1 text-sm">
@@ -24,9 +35,10 @@ function PickList({ picks }: { picks: DraftGradePickRowView[] }) {
             <span className="font-medium">{p.playerName}</span>
             <span className="block text-xs text-chalk-dim">
               Round {p.round}, Pick {p.pickNo} · Drafted {p.draftRankText} → finished {p.finishRankText}
+              {!p.graded && ` · ${p.reasonLabel}`}
             </span>
           </span>
-          <GradeBadge grade={p.grade} color={p.gradeColor} />
+          {p.graded ? <GradeBadge grade={p.grade} color={p.gradeColor} /> : <NABadge reasonLabel={p.reasonLabel} />}
         </li>
       ))}
     </ol>
