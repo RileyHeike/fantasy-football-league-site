@@ -1,7 +1,9 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { assertSnapshot, formatPoints, type BracketMatch, type DraftPick, type Game, type GameSide, type LeagueRecord, type LeagueSnapshot, type Manager, type Season, type Transaction } from "@league/core";
+import { assertSnapshot, formatPoints, type BracketMatch, type DraftPick, type Game, type GameSide, type GradedPick, type LeagueRecord, type LeagueSnapshot, type Manager, type ManagerCareerGrade, type ManagerSeasonGrade, type Season, type Transaction } from "@league/core";
+import type { DraftGradeCareerRowView, DraftGradeLeaderboardView, DraftGradePickRowView, DraftGradeSeasonRowView } from "./draftGradeView";
+import { gradeColor } from "./grades";
 import type { MatchupData, MatchupSide } from "./matchup";
 import type { RecordCardView, RecordRowView } from "./recordView";
 
@@ -166,4 +168,61 @@ export function buildRecordCard(r: LeagueRecord): RecordCardView {
     colorIndex: rows[0]!.colorIndex,
     rows,
   };
+}
+
+function draftGradePickRow(p: GradedPick): DraftGradePickRowView {
+  return {
+    playerId: p.playerId,
+    playerName: playerName(p.playerId),
+    position: p.position,
+    round: p.round,
+    pickNo: p.pickNo,
+    draftRankText: `${p.position}${p.draftRank}`,
+    finishRankText: `${p.position}${p.finishRank}`,
+    grade: p.grade,
+    gradeColor: gradeColor(p.grade),
+  };
+}
+
+function draftGradeSeasonRow(row: ManagerSeasonGrade): DraftGradeSeasonRowView {
+  const m = manager(row.managerId);
+  return {
+    managerId: row.managerId,
+    managerName: m.name,
+    colorIndex: m.colorIndex,
+    season: row.season,
+    pickCount: row.pickCount,
+    grade: row.grade,
+    gradeColor: gradeColor(row.grade),
+    picks: row.picks.map(draftGradePickRow),
+  };
+}
+
+function draftGradeCareerRow(row: ManagerCareerGrade, seasons: DraftGradeSeasonRowView[]): DraftGradeCareerRowView {
+  const m = manager(row.managerId);
+  return {
+    managerId: row.managerId,
+    managerName: m.name,
+    colorIndex: m.colorIndex,
+    pickCount: row.pickCount,
+    grade: row.grade,
+    gradeColor: gradeColor(row.grade),
+    seasons,
+  };
+}
+
+/** Plain, serializable leaderboard for the draft grades page: all-time plus per-season breakdowns. */
+export function buildDraftGradeLeaderboard(): DraftGradeLeaderboardView {
+  const { bySeason, career } = stats().draftGrades;
+  const seasons = Object.keys(bySeason)
+    .map(Number)
+    .sort((a, b) => b - a)
+    .map((season) => ({ season, rows: bySeason[season]!.map(draftGradeSeasonRow) }));
+
+  const seasonsByManager = new Map<string, DraftGradeSeasonRowView[]>();
+  for (const { rows } of seasons) {
+    for (const row of rows) seasonsByManager.set(row.managerId, [...(seasonsByManager.get(row.managerId) ?? []), row]);
+  }
+
+  return { career: career.map((row) => draftGradeCareerRow(row, seasonsByManager.get(row.managerId) ?? [])), seasons };
 }

@@ -38,7 +38,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/transactions/", label: "Transactions" },
       { href: "/draft/", label: "Draft" },
-      { href: "/draft-grades/", label: "Draft grades", comingSoon: true },
+      { href: "/draft-grades/", label: "Draft grades" },
       { href: "/trade-grades/", label: "Trade grades", comingSoon: true },
       { href: "/waiver-value/", label: "Waiver wire value", comingSoon: true },
     ],
