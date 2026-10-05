@@ -160,7 +160,7 @@ export function normalize(raw: RawSeason[], opts: NormalizeOptions = {}): League
       for (const p of picks) {
         const managerId = m(Number(p.roster_id)) ?? managers.byUserId(p.picked_by);
         if (!managerId) continue;
-        draftPicks.push({ season: year, round: p.round, pickNo: p.pick_no, managerId, playerId: p.player_id });
+        draftPicks.push({ season: year, round: p.round, pickNo: p.pick_no, draftSlot: p.draft_slot, managerId, playerId: p.player_id });
         const name = [p.metadata.first_name, p.metadata.last_name].filter(Boolean).join(" ");
         if (name) players[p.player_id] = { name, position: p.metadata.position, team: p.metadata.team ?? null };
       }

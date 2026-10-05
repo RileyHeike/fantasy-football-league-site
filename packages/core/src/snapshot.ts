@@ -8,7 +8,8 @@ import { computeAll, type StatResults } from "./stats";
  * breaking changes so an old snapshot is rejected instead of half-rendering.
  */
 // Bumped 3 -> 4: PlayerSeasonFinish gained gamesPlayed and rawStats.
-export const SCHEMA_VERSION = 4;
+// Bumped 4 -> 5: DraftPick gained draftSlot.
+export const SCHEMA_VERSION = 5;
 
 export interface LeagueSnapshot {
   schemaVersion: number;

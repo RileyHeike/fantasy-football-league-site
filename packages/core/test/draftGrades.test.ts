@@ -40,8 +40,8 @@ const asUngraded = (p: PickGrade) => p as Extract<PickGrade, { graded: false }>;
 describe("pickDetailsForSeason", () => {
   it("ranks every position, including K and DEF", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "k1" },
-      { season: 2023, round: 2, pickNo: 2, managerId: "b", playerId: "k2" },
+      { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "k1" },
+      { season: 2023, round: 2, pickNo: 2, draftSlot: 1, managerId: "b", playerId: "k2" },
     ];
     const finishes = [
       finish({ playerId: "k1", position: "K", points: 120, positionRank: 2 }),
@@ -53,13 +53,13 @@ describe("pickDetailsForSeason", () => {
     const k1 = details.find((d) => d.playerId === "k1")!;
     expect(k1.draftRank).toBe(1);
     expect(k1.poolSize).toBe(2);
-    expect(k1.finish).toEqual({ finishRank: 2, points: 120, gamesPlayed: 17, pointsPerGame: 7.06 });
+    expect(k1.finish).toEqual({ finishRank: 2, points: 120, gamesPlayed: 17, pointsPerGame: 7.06, rawStats: {} });
   });
 
   it("buckets a pick by the position it was ranked under, not its draft-time position", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "flex" },
-      { season: 2023, round: 1, pickNo: 2, managerId: "b", playerId: "wr2" },
+      { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "flex" },
+      { season: 2023, round: 1, pickNo: 2, draftSlot: 1, managerId: "b", playerId: "wr2" },
     ];
     const finishes = [
       finish({ playerId: "flex", position: "WR", points: 150, positionRank: 1 }),
@@ -76,8 +76,8 @@ describe("pickDetailsForSeason", () => {
 
   it("still counts a pick with no finish data toward its position's draft slots", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "good-wr" },
-      { season: 2023, round: 5, pickNo: 50, managerId: "a", playerId: "bust-wr" },
+      { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "good-wr" },
+      { season: 2023, round: 5, pickNo: 50, draftSlot: 1, managerId: "a", playerId: "bust-wr" },
     ];
     const finishes = [finish({ playerId: "good-wr", position: "WR", points: 200, positionRank: 1 })];
     const players: Record<string, PlayerInfo> = { "good-wr": { name: "Good WR", position: "WR" }, "bust-wr": { name: "Bust WR", position: "WR" } };
@@ -93,9 +93,9 @@ describe("pickDetailsForSeason", () => {
 describe("gradedPicksForSeason", () => {
   it("scores a late pick that outperformed as a steal, via the rank-delta component", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 10, managerId: "a", playerId: "wr-early" },
-      { season: 2023, round: 2, pickNo: 20, managerId: "b", playerId: "wr-mid" },
-      { season: 2023, round: 3, pickNo: 30, managerId: "c", playerId: "wr-late" },
+      { season: 2023, round: 1, pickNo: 10, draftSlot: 1, managerId: "a", playerId: "wr-early" },
+      { season: 2023, round: 2, pickNo: 20, draftSlot: 1, managerId: "b", playerId: "wr-mid" },
+      { season: 2023, round: 3, pickNo: 30, draftSlot: 1, managerId: "c", playerId: "wr-late" },
     ];
     const finishes = [
       finish({ playerId: "wr-early", position: "WR", points: 150, positionRank: 2 }),
@@ -119,10 +119,10 @@ describe("gradedPicksForSeason", () => {
   it("weighs actual point production: the same rank jump is worth more near the top of a position than the bottom", () => {
     const FILLER_COUNT = 20;
     const picks: DraftPick[] = Array.from({ length: FILLER_COUNT }, (_, i) => ({
-      season: 2022, round: 1, pickNo: i + 1, managerId: "filler", playerId: `wrFiller${i}`,
+      season: 2022, round: 1, pickNo: i + 1, draftSlot: i + 1, managerId: "filler", playerId: `wrFiller${i}`,
     }));
-    picks[4] = { season: 2022, round: 1, pickNo: 5, managerId: "a", playerId: "wrTopSteal" };
-    picks[19] = { season: 2022, round: 1, pickNo: 20, managerId: "b", playerId: "wrBottomSteal" };
+    picks[4] = { season: 2022, round: 1, pickNo: 5, draftSlot: 1, managerId: "a", playerId: "wrTopSteal" };
+    picks[19] = { season: 2022, round: 1, pickNo: 20, draftSlot: 1, managerId: "b", playerId: "wrBottomSteal" };
 
     const players: Record<string, PlayerInfo> = {};
     for (const p of picks) players[p.playerId] = { name: p.playerId, position: "WR" };
@@ -149,11 +149,11 @@ describe("gradedPicksForSeason", () => {
     // Points-delta is normalized against the spread of the whole drafted pool, not the #1 scorer's own
     // total — otherwise a pick that IS the #1 scorer compresses its own denominator toward its own value.
     const picks: DraftPick[] = [
-      { season: 2024, round: 1, pickNo: 1, managerId: "x", playerId: "other1" },
-      { season: 2024, round: 1, pickNo: 2, managerId: "x", playerId: "other2" },
-      { season: 2024, round: 1, pickNo: 3, managerId: "x", playerId: "other3" },
-      { season: 2024, round: 1, pickNo: 4, managerId: "a", playerId: "stud" }, // draftRank 4
-      { season: 2024, round: 1, pickNo: 5, managerId: "x", playerId: "other5" },
+      { season: 2024, round: 1, pickNo: 1, draftSlot: 1, managerId: "x", playerId: "other1" },
+      { season: 2024, round: 1, pickNo: 2, draftSlot: 1, managerId: "x", playerId: "other2" },
+      { season: 2024, round: 1, pickNo: 3, draftSlot: 1, managerId: "x", playerId: "other3" },
+      { season: 2024, round: 1, pickNo: 4, draftSlot: 1, managerId: "a", playerId: "stud" }, // draftRank 4
+      { season: 2024, round: 1, pickNo: 5, draftSlot: 1, managerId: "x", playerId: "other5" },
     ];
     const players: Record<string, PlayerInfo> = {};
     for (const p of picks) players[p.playerId] = { name: p.playerId, position: "RB" };
@@ -171,8 +171,8 @@ describe("gradedPicksForSeason", () => {
 
   it("marks a pick ungraded, not a bust, when its player has no finish data — but keeps it visible", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "good-wr" },
-      { season: 2023, round: 5, pickNo: 50, managerId: "a", playerId: "bust-wr" },
+      { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "good-wr" },
+      { season: 2023, round: 5, pickNo: 50, draftSlot: 1, managerId: "a", playerId: "bust-wr" },
     ];
     const finishes = [finish({ playerId: "good-wr", position: "WR", points: 200, positionRank: 1 })];
     const players: Record<string, PlayerInfo> = { "good-wr": { name: "Good WR", position: "WR" }, "bust-wr": { name: "Bust WR", position: "WR" } };
@@ -186,8 +186,8 @@ describe("gradedPicksForSeason", () => {
 
   it("marks a pick ungraded when its player played less than half the season", () => {
     const picks: DraftPick[] = [
-      { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "injured" },
-      { season: 2023, round: 2, pickNo: 2, managerId: "b", playerId: "healthy" },
+      { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "injured" },
+      { season: 2023, round: 2, pickNo: 2, draftSlot: 1, managerId: "b", playerId: "healthy" },
     ];
     const finishes = [
       // Full season is 17 games (healthy's gamesPlayed sets the season max); injured played 6, well under half.
@@ -202,7 +202,7 @@ describe("gradedPicksForSeason", () => {
   });
 
   it("excludes K and DEF picks even when a finish exists", () => {
-    const picks: DraftPick[] = [{ season: 2023, round: 10, pickNo: 100, managerId: "a", playerId: "kicker1" }];
+    const picks: DraftPick[] = [{ season: 2023, round: 10, pickNo: 100, draftSlot: 1, managerId: "a", playerId: "kicker1" }];
     const finishes = [finish({ playerId: "kicker1", position: "K", points: 120, positionRank: 1 })];
     const players: Record<string, PlayerInfo> = { kicker1: { name: "Kicker", position: "K" } };
     expect(gradedPicksForSeason(picks, finishes, players, 2023)).toEqual([]);
@@ -213,9 +213,9 @@ describe("computeDraftGrades", () => {
   it("omits a manager/season entirely when every pick is ungraded", () => {
     const league = buildLeague(
       [
-        { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "kicker1" },
-        { season: 2023, round: 2, pickNo: 2, managerId: "a", playerId: "bust-wr" },
-        { season: 2023, round: 3, pickNo: 3, managerId: "b", playerId: "good-wr" },
+        { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "kicker1" },
+        { season: 2023, round: 2, pickNo: 2, draftSlot: 1, managerId: "a", playerId: "bust-wr" },
+        { season: 2023, round: 3, pickNo: 3, draftSlot: 1, managerId: "b", playerId: "good-wr" },
       ],
       [
         finish({ playerId: "kicker1", position: "K", points: 100, positionRank: 1 }),
@@ -232,9 +232,9 @@ describe("computeDraftGrades", () => {
   it("keeps ungraded picks visible in a manager's pick list without counting them toward the grade", () => {
     const league = buildLeague(
       [
-        { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "injured" },
-        { season: 2023, round: 2, pickNo: 2, managerId: "a", playerId: "healthyA" },
-        { season: 2023, round: 3, pickNo: 3, managerId: "b", playerId: "healthyB" },
+        { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "injured" },
+        { season: 2023, round: 2, pickNo: 2, draftSlot: 1, managerId: "a", playerId: "healthyA" },
+        { season: 2023, round: 3, pickNo: 3, draftSlot: 1, managerId: "b", playerId: "healthyB" },
       ],
       [
         finish({ playerId: "injured", position: "WR", points: 60, positionRank: 3, gamesPlayed: 5 }),
@@ -252,10 +252,10 @@ describe("computeDraftGrades", () => {
   it("weighs a round-1 pick more than a round-10 pick in the manager's average", () => {
     const league = buildLeague(
       [
-        { season: 2023, round: 1, pickNo: 1, managerId: "x", playerId: "r1b" },
-        { season: 2023, round: 1, pickNo: 2, managerId: "a", playerId: "r1a" }, // beats its slot: score +0.5
-        { season: 2023, round: 10, pickNo: 3, managerId: "a", playerId: "r10a" }, // misses its slot by the same magnitude: score -0.5
-        { season: 2023, round: 10, pickNo: 4, managerId: "x", playerId: "r10b" },
+        { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "x", playerId: "r1b" },
+        { season: 2023, round: 1, pickNo: 2, draftSlot: 1, managerId: "a", playerId: "r1a" }, // beats its slot: score +0.5
+        { season: 2023, round: 10, pickNo: 3, draftSlot: 1, managerId: "a", playerId: "r10a" }, // misses its slot by the same magnitude: score -0.5
+        { season: 2023, round: 10, pickNo: 4, draftSlot: 1, managerId: "x", playerId: "r10b" },
       ],
       [
         finish({ playerId: "r1a", position: "WR", points: 200, positionRank: 1 }),
@@ -277,14 +277,14 @@ describe("computeDraftGrades", () => {
     // Every pick is round 1 so roundWeight is constant across the board, isolating flat-pooling from round-weighting.
     const league = buildLeague(
       [
-        { season: 2022, round: 1, pickNo: 2, managerId: "a", playerId: "p1" },
-        { season: 2022, round: 1, pickNo: 1, managerId: "x", playerId: "p1b" },
-        { season: 2023, round: 1, pickNo: 1, managerId: "a", playerId: "p2" },
-        { season: 2023, round: 1, pickNo: 2, managerId: "x", playerId: "p2b" },
-        { season: 2023, round: 1, pickNo: 3, managerId: "a", playerId: "p3" },
-        { season: 2023, round: 1, pickNo: 4, managerId: "x", playerId: "p3b" },
-        { season: 2023, round: 1, pickNo: 5, managerId: "a", playerId: "p4" },
-        { season: 2023, round: 1, pickNo: 6, managerId: "x", playerId: "p4b" },
+        { season: 2022, round: 1, pickNo: 2, draftSlot: 1, managerId: "a", playerId: "p1" },
+        { season: 2022, round: 1, pickNo: 1, draftSlot: 1, managerId: "x", playerId: "p1b" },
+        { season: 2023, round: 1, pickNo: 1, draftSlot: 1, managerId: "a", playerId: "p2" },
+        { season: 2023, round: 1, pickNo: 2, draftSlot: 1, managerId: "x", playerId: "p2b" },
+        { season: 2023, round: 1, pickNo: 3, draftSlot: 1, managerId: "a", playerId: "p3" },
+        { season: 2023, round: 1, pickNo: 4, draftSlot: 1, managerId: "x", playerId: "p3b" },
+        { season: 2023, round: 1, pickNo: 5, draftSlot: 1, managerId: "a", playerId: "p4" },
+        { season: 2023, round: 1, pickNo: 6, draftSlot: 1, managerId: "x", playerId: "p4b" },
       ],
       [
         finish({ playerId: "p1", season: 2022, position: "WR", points: 200, positionRank: 1 }),

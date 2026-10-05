@@ -1,12 +1,13 @@
 import "server-only";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { assertSnapshot, formatPoints, pickDetailsForSeason, type BracketMatch, type DraftPick, type Game, type GameSide, type LeagueRecord, type LeagueSnapshot, type Manager, type ManagerCareerGrade, type ManagerSeasonGrade, type PickGrade, type Season, type Transaction, type UngradedReason } from "@league/core";
+import { assertSnapshot, formatPoints, gradedPicksForSeason, pickDetailsForSeason, type BracketMatch, type DraftPick, type Game, type GameSide, type LeagueRecord, type LeagueSnapshot, type Manager, type ManagerCareerGrade, type ManagerSeasonGrade, type PickGrade, type Season, type Transaction, type UngradedReason } from "@league/core";
 import type { DraftBoardPickView } from "./draftBoardView";
 import type { DraftGradeCareerRowView, DraftGradeLeaderboardView, DraftGradePickRowView, DraftGradeSeasonRowView } from "./draftGradeView";
 import { gradeColor } from "./grades";
 import type { MatchupData, MatchupSide } from "./matchup";
 import type { RecordCardView, RecordRowView } from "./recordView";
+import { statLineFor } from "./statLine";
 
 /**
  * Build-time data access. Pages are statically rendered, so the snapshot is
@@ -83,18 +84,32 @@ export function hasDraft(year: number): boolean {
   return draftPicksFor(year).length > 0;
 }
 
-/** Plain lookup for the draft board's click-through modal, every position — keyed by playerId. */
+/** Plain season summary for the draft board's click-through modal, every position — keyed by playerId. */
 export function buildDraftBoardView(year: number): Map<string, DraftBoardPickView> {
-  const details = pickDetailsForSeason(league().draftPicks, league().playerSeasonFinishes, league().players, year);
+  const { draftPicks, playerSeasonFinishes, players } = league();
+  const details = pickDetailsForSeason(draftPicks, playerSeasonFinishes, players, year);
+  const gradeByPlayerId = new Map(gradedPicksForSeason(draftPicks, playerSeasonFinishes, players, year).map((g) => [g.playerId, g]));
+
   const out = new Map<string, DraftBoardPickView>();
   for (const d of details) {
+    const m = manager(d.managerId);
+    const g = gradeByPlayerId.get(d.playerId);
     out.set(d.playerId, {
       playerId: d.playerId,
       playerName: playerName(d.playerId),
       position: d.position,
+      nflTeam: players[d.playerId]?.team ?? undefined,
+      managerId: d.managerId,
+      managerName: m.name,
+      colorIndex: m.colorIndex,
       draftRankText: `${d.position}${d.draftRank}`,
       finishRankText: d.finish ? `${d.position}${d.finish.finishRank}` : "N/A",
       pointsPerGameText: d.finish ? formatPoints(d.finish.pointsPerGame) : "N/A",
+      points: d.finish?.points,
+      gamesPlayed: d.finish?.gamesPlayed,
+      statLine: d.finish ? statLineFor(d.position, d.finish.rawStats) : [],
+      grade: g?.graded ? { grade: g.grade, gradeColor: gradeColor(g.grade) } : undefined,
+      ungraded: g && !g.graded ? { reasonLabel: UNGRADED_REASON_LABELS[g.reason] } : undefined,
     });
   }
   return out;

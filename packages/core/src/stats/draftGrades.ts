@@ -9,6 +9,8 @@ export interface PickFinish {
   points: number;
   gamesPlayed: number;
   pointsPerGame: number;
+  /** The player's full raw per-category stat line that season, verbatim — see PlayerSeasonFinish.rawStats. */
+  rawStats: Record<string, number>;
 }
 
 export interface PickDetail {
@@ -62,7 +64,7 @@ export function pickDetailsForSeason(
     sorted.forEach((pick, i) => {
       const f = finishByPlayer.get(pick.playerId);
       const finish: PickFinish | undefined = f
-        ? { finishRank: f.positionRank, points: f.points, gamesPlayed: f.gamesPlayed, pointsPerGame: f.gamesPlayed > 0 ? round2(f.points / f.gamesPlayed) : 0 }
+        ? { finishRank: f.positionRank, points: f.points, gamesPlayed: f.gamesPlayed, pointsPerGame: f.gamesPlayed > 0 ? round2(f.points / f.gamesPlayed) : 0, rawStats: f.rawStats }
         : undefined;
       out.push({ season, pickNo: pick.pickNo, round: pick.round, managerId: pick.managerId, playerId: pick.playerId, position, draftRank: i + 1, poolSize, finish });
     });

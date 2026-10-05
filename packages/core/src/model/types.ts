@@ -107,6 +107,8 @@ export interface DraftPick {
   season: number;
   round: number;
   pickNo: number;
+  /** Sleeper's fixed snake-draft column, 1..teamCount — constant for a manager for the whole draft. */
+  draftSlot: number;
   managerId: string;
   playerId: string;
 }
