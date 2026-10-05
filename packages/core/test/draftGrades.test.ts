@@ -140,9 +140,33 @@ describe("gradedPicksForSeason", () => {
     const bottom = asGraded(graded.find((p) => p.playerId === "wrBottomSteal")!);
     expect(top.draftRank - top.finish.finishRank).toBe(2); // same 2-spot rank jump as bottom...
     expect(bottom.draftRank - bottom.finish.finishRank).toBe(2);
-    expect(top.score).toBeCloseTo(0.13, 2); // (260 - 220) / 300
-    expect(bottom.score).toBeCloseTo(0.02, 2); // (65 - 60) / 300
+    expect(top.score).toBeCloseTo(0.41, 2); // (260 - 220) / spread, spread = stddev([260, 65]) = 97.5
+    expect(bottom.score).toBeCloseTo(0.05, 2); // (65 - 60) / spread
     expect(top.score).toBeGreaterThan(bottom.score); // ...worth much more near the top of the position
+  });
+
+  it("doesn't self-shrink a pick's score just because it is the position's own #1 finisher", () => {
+    // Points-delta is normalized against the spread of the whole drafted pool, not the #1 scorer's own
+    // total — otherwise a pick that IS the #1 scorer compresses its own denominator toward its own value.
+    const picks: DraftPick[] = [
+      { season: 2024, round: 1, pickNo: 1, managerId: "x", playerId: "other1" },
+      { season: 2024, round: 1, pickNo: 2, managerId: "x", playerId: "other2" },
+      { season: 2024, round: 1, pickNo: 3, managerId: "x", playerId: "other3" },
+      { season: 2024, round: 1, pickNo: 4, managerId: "a", playerId: "stud" }, // draftRank 4
+      { season: 2024, round: 1, pickNo: 5, managerId: "x", playerId: "other5" },
+    ];
+    const players: Record<string, PlayerInfo> = {};
+    for (const p of picks) players[p.playerId] = { name: p.playerId, position: "RB" };
+    const finishes = [
+      finish({ playerId: "stud", season: 2024, position: "RB", points: 380, positionRank: 1 }), // our pick: finished #1
+      finish({ playerId: "other1", season: 2024, position: "RB", points: 300, positionRank: 2 }),
+      finish({ playerId: "other2", season: 2024, position: "RB", points: 280, positionRank: 3 }),
+      finish({ playerId: "other3", season: 2024, position: "RB", points: 265, positionRank: 4 }), // replacement for draftRank 4
+      finish({ playerId: "other5", season: 2024, position: "RB", points: 60, positionRank: 20 }),
+    ];
+    const graded = gradedPicksForSeason(picks, finishes, players, 2024, POINTS_ONLY_CONFIG);
+    const stud = asGraded(graded.find((p) => p.playerId === "stud")!);
+    expect(stud.score).toBeGreaterThan(0.8);
   });
 
   it("marks a pick ungraded, not a bust, when its player has no finish data — but keeps it visible", () => {

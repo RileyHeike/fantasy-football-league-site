@@ -93,6 +93,12 @@ function pointsAtRank(rankedByRankAsc: PlayerSeasonFinish[], rank: number): numb
   return (rankedByRankAsc.find((f) => f.positionRank === rank) ?? rankedByRankAsc[rankedByRankAsc.length - 1]!).points;
 }
 
+function stdDev(values: number[]): number {
+  if (values.length === 0) return 0;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  return Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
+}
+
 /**
  * Picks at config.positions, each graded or marked ungraded with a reason.
  * Ungraded picks (no finish data, or too few games played) still appear in
@@ -115,6 +121,15 @@ export function gradedPicksForSeason(
   for (const f of seasonFinishes) rankedByPosition.set(f.position, [...(rankedByPosition.get(f.position) ?? []), f]);
   for (const ranked of rankedByPosition.values()) ranked.sort((a, b) => a.positionRank - b.positionRank);
 
+  // The spread of outcomes actually seen in this draft at each position — a stable yardstick for how
+  // big a swing a surplus is. Normalizing against the position's single #1 scorer instead would
+  // self-shrink a pick's own score whenever the picked player IS that #1 scorer.
+  const pointsByPosition = new Map<string, number[]>();
+  for (const d of details) {
+    if (d.finish) pointsByPosition.set(d.position, [...(pointsByPosition.get(d.position) ?? []), d.finish.points]);
+  }
+  const spreadByPosition = new Map([...pointsByPosition].map(([position, pts]) => [position, stdDev(pts)]));
+
   return details.map((detail): PickGrade => {
     if (!detail.finish) return { ...detail, graded: false, reason: "no-finish-data" };
     if (detail.finish.gamesPlayed < fullSeasonGames * config.minGamesPlayedFraction) {
@@ -122,9 +137,9 @@ export function gradedPicksForSeason(
     }
     const ranked = rankedByPosition.get(detail.position) ?? [];
     const normalizedRankDelta = clamp((detail.draftRank - detail.finish.finishRank) / detail.poolSize, -1, 1);
-    const pointsAtRank1 = pointsAtRank(ranked, 1);
     const replacementPoints = pointsAtRank(ranked, detail.draftRank);
-    const normalizedPointsDelta = pointsAtRank1 > 0 ? clamp((detail.finish.points - replacementPoints) / pointsAtRank1, -1, 1) : 0;
+    const spread = spreadByPosition.get(detail.position) ?? 0;
+    const normalizedPointsDelta = spread > 0 ? clamp((detail.finish.points - replacementPoints) / spread, -1, 1) : 0;
     const score = round2(config.rankDeltaWeight * normalizedRankDelta + config.pointsDeltaWeight * normalizedPointsDelta);
     return { ...detail, finish: detail.finish, graded: true, score, grade: gradeForScore(score, config) };
   });
@@ -184,7 +199,10 @@ export function computeDraftGrades(league: LeagueHistory, config: DraftGradeConf
     const picks = gradedPicksForSeason(league.draftPicks, league.playerSeasonFinishes, league.players, season, config);
     careerPicks.push(...picks);
     const rows = [...byManagerId(picks)]
-      .map(([managerId, managerPicks]) => ({ managerId, season, picks: managerPicks, ...weightedSummary(managerPicks, config) }))
+      .map(([managerId, managerPicks]) => {
+        const sortedPicks = [...managerPicks].sort((a, b) => a.pickNo - b.pickNo);
+        return { managerId, season, picks: sortedPicks, ...weightedSummary(sortedPicks, config) };
+      })
       .filter((row) => row.pickCount > 0)
       .sort((a, b) => b.averageScore - a.averageScore || a.managerId.localeCompare(b.managerId));
     if (rows.length) bySeason[season] = rows;
